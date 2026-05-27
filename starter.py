@@ -3,9 +3,9 @@
 import json
 import os
 import re
+import random
 
 from tqdm import tqdm
-
 
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 GPU_ID = "0"
@@ -214,28 +214,48 @@ def generate_responses(
     llm,
     sampling_params,
 ):
-    prompts = []
-    for item in data:
-        system_prompt, user_prompt = build_prompt(item["question"], item.get("options"))
-        prompt_text = tokenizer.apply_chat_template(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-        prompts.append(prompt_text)
+    RESPONSE_BUFFER_PATH = 'response_buffer.jsonl'
+    target_data = data[:200]
+    
+    responses = []
+    chunk_size = 5
+    
+    for i in range(0, len(target_data), chunk_size):
+        chunk_items = target_data[i : i + chunk_size]
+        prompts = []
+        
+        # Build prompts for the current chunk
+        for item in chunk_items:
+            system_prompt, user_prompt = build_prompt(item["question"], item.get("options"))
+            prompt_text = tokenizer.apply_chat_template(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+            prompts.append(prompt_text)
 
-    print(f"Generating responses for {len(prompts)} questions...")
-    outputs = llm.generate(prompts, sampling_params=sampling_params)
-    responses = [output.outputs[0].text.strip() for output in outputs]
+        print(f"\n--- Processing questions {i + 1}-{i + len(prompts)} (Chunk {i // chunk_size + 1}) ---")        
+        outputs = llm.generate(prompts, sampling_params=sampling_params)
+        chunk_responses = [output.outputs[0].text.strip() for output in outputs]
+        
+        # Keep track of everything for the final return
+        responses.extend(chunk_responses)
 
-    for index in range(min(3, len(responses))):
-        print(f"\n-- Response {index} (id={data[index].get('id')}) --")
-        preview = responses[index][:400]
-        suffix = "..." if len(responses[index]) > 400 else ""
-        print(f"{preview}{suffix}")
+        # 3. Save these 5 responses to the buffer immediately
+        with open(RESPONSE_BUFFER_PATH, "a", encoding="utf-8") as f:
+            for r in chunk_responses:
+                f.write(json.dumps(r) + "\n")
+        print(f"Saved {len(chunk_responses)} responses to {RESPONSE_BUFFER_PATH}")
+
+        # Optional: Preview the responses from this specific chunk
+        for index in range(len(chunk_responses)):
+            print(f" -> Response Preview (id={chunk_items[index].get('id')}):")
+            preview = chunk_responses[index][:150]
+            suffix = "..." if len(chunk_responses[index]) > 150 else ""
+            print(f"    {preview}{suffix}")
 
     return responses
 
@@ -329,8 +349,6 @@ def print_metrics(results):
 
 
 def save_results(results, output_path, save_eval):
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
     with open(output_path, "w", encoding="utf-8") as handle:
         for result in results:
             if save_eval:
