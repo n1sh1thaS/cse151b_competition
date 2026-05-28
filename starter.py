@@ -53,12 +53,18 @@ Do not restart the solution unless a concrete mathematical inconsistency is dete
 - simplifications,
 before finalizing.
 
-8. Fully simplify the final result.
+8. Fully simplify the final result.  If the expected answer is numeric decimal, compute the decimal value instead of leaving an exact symbolic expression like pi or fractions.
 
 9. Never change a correct conclusion unless a specific mathematical error is found.
 
-10. Final output format:
-\boxed{final answer}
+10. If the question contains [ANS] multiple times, return a list with the same number of answers as [ANS] placeholders. If the problem has multiple sub-answers, separate them by commas inside a single \\boxed{}, e.g. \\boxed{3, 7}
+
+For example, the following question requires multiple answers:
+"Find all real solutions of equation $2+7 z+z^2=0$. Does the equation have real solutions? Input Yes or No: [ANS] If your answer is Yes, input the solutions: $z_1=$ [ANS] and $z_2=$ [ANS] with $z_1\le z_2$."
+The expected output is \\boxed{True, 6.70156211872, 0.298437881284}
+
+11. Do not abbreviate True/False answers as T/F. Use exactly True or False. e.g. \\boxed{True, False}
+
 """
 
 
