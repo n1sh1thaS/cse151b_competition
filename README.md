@@ -1,15 +1,30 @@
-# CSE 151B Competition — Starter Code
+# CSE 151B Project
 
-Open **`starter_code_cse151b_comp.ipynb`** to get started.
 
-The notebook covers environment setup, inference with Qwen3-4B-Thinking (INT8), and scoring against the public dataset.
+### GPU Types Used
+* NVIDIA A30
+* NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition MIG 1g.24gb
+* NVIDIA H100 PCIe MIG 1g.20gb
 
-## Contents
+### Approximate Total Inference Time
+* Private dataset: 40 hours
 
-| File | Description |
-|---|---|
-| `starter_code_cse151b_comp.ipynb` | Main entry point |
-| `judger.py` | Response scoring logic |
-| `utils.py` | Utilities used by `judger.py` |
-| `data/public.jsonl` | Public dataset with ground-truth answers |
-| `results/` | Output JSONL files written at runtime |
+## Reproducing Results
+
+### Environment Setup
+The packages (with exact versions) used to run this script successfully on an A30 GPU can be found in `requirements.txt`. Install them using:
+
+```bash
+pip install -r requirements.txt
+```
+
+### What run_inference() does and how to call it
+The `run_inference` function can be found in `submission.py`. This function loads data from `DEFAULT_DATA_PATH`, loads the base model, generates responses, and saves the submission CSV to `DEFAULT_OUTPUT_PATH`.
+
+Modify `DEFAULT_DATA_PATH`, `DEFAULT_OUTPUT_PATH`, and `GPU_ID` at the top of the file as needed.
+
+You can directly call the `run_inference` function or simply run the `submission.py` script with:
+
+```bash
+python submission.py
+```
